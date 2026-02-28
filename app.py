@@ -9,7 +9,7 @@ CLIENT_ID = "3w729rzyygngddusvrnayve46uhp9t"
 CLIENT_SECRET = "9h2x87by844s8d7zsc3lbldas05oho"
 
 # Список логинов стримеров
-STREAMERS = ["moneymate_", "Ivanmiks", "maryapozs", "kripero4ek2014"]
+STREAMERS = ["moneymate_", "Ivanmiks", "maryapozs", "kripero4ek2014", "pgl", "cs2_maincast", "dota2_maincast"]
 
 # Кэш для токена, чтобы Twitch не забанил за частые запросы
 token_cache = {
@@ -61,4 +61,5 @@ def streams():
     return jsonify(get_live_streams())
 
 if __name__ == "__main__":
+
     app.run(debug=True)
