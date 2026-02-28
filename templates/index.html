@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Стримеры - HorizonOfCubes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-site: #0c0c0e; --bg-card: #141417; --text-main: #ffffff;
+            --text-muted: #9ba3af; --accent-purple: #9146ff; --accent-pink: #d946ef;
+        }
+
+        body { background: var(--bg-site); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+
+        /* --- ШАПКА --- */
+        header {
+            height: 70px; background: rgba(12, 12, 14, 0.95); display: flex;
+            align-items: center; justify-content: space-between; padding: 0 40px;
+            border-bottom: 1px solid #1f1f23; position: sticky; top: 0; z-index: 1000;
+        }
+        nav ul { display: flex; list-style: none; gap: 25px; margin: 0; padding: 0; }
+        nav a { text-decoration: none; color: var(--text-muted); font-size: 14px; font-weight: 500; position: relative; }
+        nav a.active { color: var(--text-main); }
+        nav a.active::after {
+            content: ''; position: absolute; bottom: -26px; left: 0; width: 100%; height: 2px; background: var(--accent-pink);
+        }
+
+        /* --- 3D КАРУСЕЛЬ --- */
+        .stage {
+            perspective: 1200px;
+            width: 100%;
+            height: 700px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 50px;
+            position: relative;
+        }
+
+        .carousel {
+            position: relative;
+            width: 800px;
+            height: 100%;
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Общие стили карточек */
+        .card {
+            position: absolute;
+            width: 700px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #1f1f23;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            backface-visibility: hidden;
+            user-select: none;
+        }
+
+        /* Состояния карточек */
+        .card.prev {
+            transform: translateX(-450px) translateZ(-300px) rotateY(25deg);
+            opacity: 0.4;
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        .card.active {
+            transform: translateX(0) translateZ(0) rotateY(0);
+            opacity: 1;
+            z-index: 10;
+            border-color: var(--accent-purple);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+
+        .card.next {
+            transform: translateX(450px) translateZ(-300px) rotateY(-25deg);
+            opacity: 0.4;
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        .card.hidden {
+            transform: translateZ(-500px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Элементы внутри карточки */
+        .card h3 { margin: 0 0 20px 0; text-align: center; font-size: 1.8rem; }
+        
+        .video-wrapper {
+            position: relative; width: 100%; padding-top: 56.25%;
+            background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+        }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        .stats-row {
+            display: flex; justify-content: space-between; border-top: 1px solid #27272a;
+            padding-top: 15px; margin-top: 15px; font-size: 0.9rem;
+        }
+
+        /* Кнопки навигации (вынесены поверх) */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px; height: 60px;
+            background: var(--accent-pink);
+            border: none; border-radius: 50%;
+            color: white; font-size: 24px; cursor: pointer;
+            z-index: 100; transition: 0.3s;
+            box-shadow: 0 0 20px rgba(217, 70, 239, 0.4);
+        }
+        .nav-btn:hover { background: white; color: var(--accent-pink); scale: 1.1; }
+        .btn-left { left: 5%; }
+        .btn-right { right: 5%; }
+
+        .dot { height: 8px; width: 8px; background: #ef4444; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #ef4444;}
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <div style="width:32px; height:32px; background:linear-gradient(45deg,#facc15,#d946ef); border-radius:4px;"></div>
+        <nav>
+            <ul>
+                <li><a href="#">Главная</a></li>
+                <li><a href="#" class="active">Стримы</a></li>
+                <li><a href="#">О проекте</a></li>
+                <li><a href="#">Вики</a></li>
+                <li><a href="#">Магазин</a></li>
+            </ul>
+        </nav>
+    </div>
+    <div style="color:var(--accent-pink)">👤 Авторизация</div>
+</header>
+
+<div class="stage">
+    <button class="nav-btn btn-left" onclick="move(-1)">❮</button>
+    <div class="carousel" id="carousel">
+        </div>
+    <button class="nav-btn btn-right" onclick="move(1)">❯</button>
+</div>
+
+<script>
+    const STREAMERS = ["moneymate_", "Ivanmiks", "maryapozs", "kripero4ek2014"];
+    let currentIndex = 0;
+    let streamData = [];
+    const PARENT = window.location.hostname;
+
+    async function init() {
+        try {
+            const res = await fetch("/api/streams");
+            streamData = await res.json();
+            createCards();
+            updateCarousel();
+        } catch (e) { console.error(e); }
+    }
+
+    function createCards() {
+        const carousel = document.getElementById("carousel");
+        carousel.innerHTML = "";
+        
+        STREAMERS.forEach((name, index) => {
+            const stream = streamData.find(s => s.user_login.toLowerCase() === name.toLowerCase());
+            const div = document.createElement("div");
+            div.className = "card";
+            div.id = `card-${index}`;
+
+            if (stream) {
+                div.innerHTML = `
+                    <h3>${stream.user_name}</h3>
+                    <div class="video-wrapper">
+                        <iframe src="https://player.twitch.tv/?channel=${stream.user_login}&parent=${PARENT}&autoplay=false&muted=true" allowfullscreen></iframe>
+                    </div>
+                    <div class="stats-row">
+                        <span><span class="dot"></span> LIVE</span>
+                        <span>👤 ${stream.viewer_count}</span>
+                        <span>🎮 ${stream.game_name}</span>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <h3>${name}</h3>
+                    <div class="video-wrapper" style="display:flex; align-items:center; justify-content:center; background:#000;">
+                        <span style="color:#222; font-weight:900; font-size:2.5rem;">OFFLINE</span>
+                    </div>
+                    <p style="text-align:center; color:var(--text-muted);">Стример не в сети</p>
+                `;
+            }
+            carousel.appendChild(div);
+        });
+    }
+
+    function updateCarousel() {
+        STREAMERS.forEach((_, index) => {
+            const card = document.getElementById(`card-${index}`);
+            card.className = "card hidden";
+
+            if (index === currentIndex) {
+                card.className = "card active";
+            } else if (index === (currentIndex - 1 + STREAMERS.length) % STREAMERS.length) {
+                card.className = "card prev";
+            } else if (index === (currentIndex + 1) % STREAMERS.length) {
+                card.className = "card next";
+            }
+        });
+    }
+
+    function move(step) {
+        currentIndex = (currentIndex + step + STREAMERS.length) % STREAMERS.length;
+        updateCarousel();
+    }
+
+    init();
+    setInterval(async () => {
+        const res = await fetch("/api/streams");
+        streamData = await res.json();
+        // Обновляем данные без перерисовки всей карусели, если нужно
+    }, 60000);
+</script>
+
+</body>
+</html>
